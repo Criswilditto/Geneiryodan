@@ -4,7 +4,7 @@ import { supabase, Character, Assignment, Priority } from '@/lib/supabase';
 import CharacterCard from '@/components/CharacterCard';
 import MemberManager from '@/components/MemberManager';
 import MembersView from '@/components/MembersView';
-import { LogOut, Search, Filter, Users, UserPlus, Swords, LayoutGrid } from 'lucide-react';
+import { LogOut, Search, Filter, Users, UserPlus, Swords, LayoutGrid, Plus, X } from 'lucide-react';
 
 type Tab = 'characters' | 'members';
 
@@ -18,6 +18,11 @@ export default function Dashboard() {
   const [filterRarity, setFilterRarity] = useState('all');
   const [loading, setLoading] = useState(true);
   const [showMembers, setShowMembers] = useState(false);
+  const [showAddCharacter, setShowAddCharacter] = useState(false);
+  const [newCharName, setNewCharName] = useState('');
+  const [newCharRarity, setNewCharRarity] = useState('SSR');
+  const [charError, setCharError] = useState<string | null>(null);
+  const [charBusy, setCharBusy] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -89,6 +94,26 @@ export default function Dashboard() {
     }
   };
 
+  const createCharacter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCharError(null);
+    setCharBusy(true);
+    const { data, error } = await supabase
+      .from('characters')
+      .insert({ name: newCharName.trim(), rarity: newCharRarity, element: '', weapon: '', class: '' })
+      .select()
+      .single();
+    if (error || !data) {
+      setCharError('No se pudo crear el personaje. Intenta de nuevo.');
+    } else {
+      setCharacters((prev) => [...prev, data as Character].sort((a, b) => a.name.localeCompare(b.name)));
+      setNewCharName('');
+      setNewCharRarity('SSR');
+      setShowAddCharacter(false);
+    }
+    setCharBusy(false);
+  };
+
   const rarities = ['all', ...new Set(characters.map((c) => c.rarity))];
 
   const filtered = characters.filter((c) => {
@@ -118,13 +143,22 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-3">
             {isDictator && tab === 'characters' && (
-              <button
-                onClick={() => setShowMembers(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 transition-colors text-sm font-semibold"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">Gestionar Orden</span>
-              </button>
+              <>
+                <button
+                  onClick={() => setShowAddCharacter(true)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 transition-colors text-sm font-semibold"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Agregar personaje</span>
+                </button>
+                <button
+                  onClick={() => setShowMembers(true)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 transition-colors text-sm font-semibold"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Gestionar Orden</span>
+                </button>
+              </>
             )}
             <div className="hidden sm:flex items-center gap-2 text-sm">
               <div className="flex items-center gap-1.5 text-slate-300">
@@ -230,6 +264,51 @@ export default function Dashboard() {
 
       {showMembers && (
         <MemberManager onClose={() => setShowMembers(false)} onMemberCreated={loadData} />
+      )}
+
+      {showAddCharacter && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-slate-700">
+              <div className="flex items-center gap-2">
+                <Plus className="w-5 h-5 text-amber-500" />
+                <h2 className="text-lg font-bold text-white">Agregar personaje</h2>
+              </div>
+              <button onClick={() => setShowAddCharacter(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={createCharacter} className="p-5 space-y-4">
+              <input
+                type="text"
+                placeholder="Nombre del personaje"
+                value={newCharName}
+                onChange={(e) => setNewCharName(e.target.value)}
+                required
+                className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 outline-none focus:border-amber-600/50"
+              />
+              <select
+                value={newCharRarity}
+                onChange={(e) => setNewCharRarity(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white outline-none focus:border-amber-600/50 cursor-pointer"
+              >
+                {rarities.filter((r) => r !== 'all').map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              {charError && (
+                <div className="text-sm rounded-lg p-3 bg-red-500/10 text-red-400">{charError}</div>
+              )}
+              <button
+                type="submit"
+                disabled={charBusy}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 text-white font-semibold shadow-lg hover:from-amber-500 hover:to-amber-600 transition-all disabled:opacity-50"
+              >
+                {charBusy ? 'Creando...' : 'Crear personaje'}
+              </button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
