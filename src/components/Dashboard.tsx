@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase, Character, Assignment, Priority } from '@/lib/supabase';
 import CharacterCard from '@/components/CharacterCard';
+import CharacterHoldersModal from '@/components/CharacterHoldersModal';
 import MemberManager from '@/components/MemberManager';
 import MembersView from '@/components/MembersView';
-import { LogOut, Search, Filter, Users, UserPlus, Swords, LayoutGrid, Plus, X } from 'lucide-react';
+import { LogOut, Search, Filter, Users, UserPlus, Swords, LayoutGrid, Plus, X, Eye } from 'lucide-react';
 
 type Tab = 'characters' | 'members';
 
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const [newCharRarity, setNewCharRarity] = useState('SSR');
   const [charError, setCharError] = useState<string | null>(null);
   const [charBusy, setCharBusy] = useState(false);
+  const [holdersCharacter, setHoldersCharacter] = useState<Character | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -125,6 +127,10 @@ export default function Dashboard() {
   const assignedCount = Object.values(assignments).filter(
     (a) => a.priority !== 'No Obtenido'
   ).length;
+
+  const openHolders = async (character: Character) => {
+    setHoldersCharacter(character);
+  };
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -249,6 +255,7 @@ export default function Dashboard() {
                     onSetPriority={setPriority}
                     onUploadAvatar={uploadAvatar}
                     onRemoveAvatar={removeAvatar}
+                    onViewHolders={openHolders}
                   />
                 ))}
               </div>
@@ -264,6 +271,10 @@ export default function Dashboard() {
 
       {showMembers && (
         <MemberManager onClose={() => setShowMembers(false)} onMemberCreated={loadData} />
+      )}
+
+      {holdersCharacter && (
+        <CharacterHoldersModal character={holdersCharacter} onClose={() => setHoldersCharacter(null)} />
       )}
 
       {showAddCharacter && (

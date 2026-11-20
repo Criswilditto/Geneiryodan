@@ -1,5 +1,5 @@
 import { Character, Assignment, PRIORITIES, Priority } from '@/lib/supabase';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Eye } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 type Props = {
@@ -9,6 +9,7 @@ type Props = {
   onSetPriority: (characterId: string, priority: Priority) => void;
   onUploadAvatar: (characterId: string, file: File) => Promise<void>;
   onRemoveAvatar: (characterId: string) => void;
+  onViewHolders: (character: Character) => void;
 };
 
 const rarityColors: Record<string, string> = {
@@ -38,7 +39,7 @@ const priorityLabel: Record<string, string> = {
   P10: 'Prioridad P10',
 };
 
-export default function CharacterCard({ character, assignment, isMaestro, onSetPriority, onUploadAvatar, onRemoveAvatar }: Props) {
+export default function CharacterCard({ character, assignment, isMaestro, onSetPriority, onUploadAvatar, onRemoveAvatar, onViewHolders }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
@@ -86,6 +87,15 @@ export default function CharacterCard({ character, assignment, isMaestro, onSetP
           </div>
         )}
 
+        {/* View holders button */}
+        <button
+          onClick={() => onViewHolders(character)}
+          className="absolute bottom-2 left-2 p-2 rounded-lg bg-slate-900/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600"
+          title="Ver quién tiene este personaje"
+        >
+          <Eye className="w-4 h-4" />
+        </button>
+
         {/* Upload button — maestro only */}
         {isMaestro && (
           <>
@@ -101,7 +111,7 @@ export default function CharacterCard({ character, assignment, isMaestro, onSetP
             {character.default_avatar_url && (
               <button
                 onClick={() => onRemoveAvatar(character.id)}
-                className="absolute bottom-2 left-2 p-2 rounded-lg bg-slate-900/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                className={`absolute bottom-2 ${isMaestro ? 'left-10' : 'left-2'} p-2 rounded-lg bg-slate-900/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600`}
                 title="Quitar avatar"
               >
                 <X className="w-4 h-4" />
