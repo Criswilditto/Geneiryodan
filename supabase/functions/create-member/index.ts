@@ -91,6 +91,7 @@ Deno.serve(async (req: Request) => {
         id: newUser.user.id,
         username,
         role: "miembro",
+        must_change_password: true,
       };
       if (custom_role_id) insertData.custom_role_id = custom_role_id;
 

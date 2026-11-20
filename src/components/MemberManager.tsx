@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase, Profile, CustomRole } from '@/lib/supabase';
-import { X, UserPlus, Trash2, Loader2, Tag, Plus } from 'lucide-react';
+import { X, UserPlus, Trash2, Loader2, Tag, Plus, ChevronUp, ChevronDown } from 'lucide-react';
 
 type Props = {
   onClose: () => void;
@@ -112,7 +112,22 @@ export default function MemberManager({ onClose, onMemberCreated }: Props) {
     }
   };
 
+  const moveRole = async (role: CustomRole, dir: -1 | 1) => {
+    const idx = roles.findIndex((r) => r.id === role.id);
+    const swap = roles[idx + dir];
+    if (!swap) return;
+    setError(null);
+    const { error: e1 } = await supabase.from('custom_roles').update({ display_order: swap.display_order }).eq('id', role.id);
+    const { error: e2 } = await supabase.from('custom_roles').update({ display_order: role.display_order }).eq('id', swap.id);
+    if (e1 || e2) setError(e1?.message || e2?.message || 'Error al reordenar');
+    else await loadAll();
+  };
+
   const deleteRole = async (role: CustomRole) => {
+    if (role.is_system) {
+      setError('Los roles base de la Orden no se pueden eliminar');
+      return;
+    }
     if (!confirm(`¿Eliminar el rol "${role.name}"? Los miembros con este rol quedarán sin rol asignado.`)) return;
     const { error: err } = await supabase.from('custom_roles').delete().eq('id', role.id);
     if (err) setError(err.message);
@@ -120,10 +135,10 @@ export default function MemberManager({ onClose, onMemberCreated }: Props) {
   };
 
   const assignRole = async (memberId: string, roleId: string) => {
-    const { error: err } = await supabase
-      .from('profiles')
-      .update({ custom_role_id: roleId || null })
-      .eq('id', memberId);
+    const { error: err } = await supabase.rpc('set_member_role', {
+      p_member: memberId,
+      p_role_id: roleId || null,
+    });
     if (err) setError(err.message);
     else await loadAll();
   };
@@ -228,15 +243,36 @@ export default function MemberManager({ onClose, onMemberCreated }: Props) {
               <p className="text-xs text-slate-500 text-center py-3">No hay roles creados todavía.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {roles.map((r) => (
-                  <div key={r.id} className="flex items-center gap-2 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-1.5">
-                    <span className="text-sm text-white">{r.name}</span>
-                    <button
-                      onClick={() => deleteRole(r)}
-                      className="text-slate-500 hover:text-red-400 transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                {roles.map((r, i) => (
+                  <div key={r.id} className="flex items-center gap-1 bg-slate-900/50 border border-slate-700 rounded-lg px-2 py-1.5">
+                    <span className="text-sm text-white pl-1">{r.name}</span>
+                    <div className="flex flex-col">
+                      <button
+                        onClick={() => moveRole(r, -1)}
+                        disabled={i === 0}
+                        className="text-slate-500 hover:text-amber-400 disabled:opacity-20 disabled:hover:text-slate-500 transition-colors"
+                        title="Subir"
+                      >
+                        <ChevronUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => moveRole(r, 1)}
+                        disabled={i === roles.length - 1}
+                        className="text-slate-500 hover:text-amber-400 disabled:opacity-20 disabled:hover:text-slate-500 transition-colors"
+                        title="Bajar"
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                    {!r.is_system && (
+                      <button
+                        onClick={() => deleteRole(r)}
+                        className="text-slate-500 hover:text-red-400 transition-colors pr-1"
+                        title="Eliminar rol"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

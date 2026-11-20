@@ -14,6 +14,7 @@ export type CustomRole = {
   id: string;
   name: string;
   display_order: number;
+  is_system: boolean;
   created_at: string;
 };
 
@@ -23,6 +24,7 @@ export type Profile = {
   role: 'dictador' | 'miembro';
   avatar_url: string | null;
   custom_role_id: string | null;
+  must_change_password: boolean;
   created_at: string;
 };
 

@@ -82,7 +82,7 @@ export default function MembersView({ onBack }: Props) {
   const membersWithRoles = roles.map((role) => ({
     role,
     list: filteredMembers.filter((m) => m.custom_role_id === role.id),
-  })).filter((g) => g.list.length > 0);
+  }));
   const assignedIds = new Set([
     ...(dictator ? [dictator.id] : []),
     ...membersWithRoles.flatMap((g) => g.list.map((m) => m.id)),
@@ -220,16 +220,16 @@ export default function MembersView({ onBack }: Props) {
           <div className="text-center py-20 text-slate-500">No se encontraron miembros.</div>
         ) : (
           <div className="space-y-8">
-            {/* Dictator section */}
+            {/* Dictador section */}
             {dictator && (
-              <MemberSection title="Dictador" badge="bg-amber-500/20 text-amber-400">
+              <MemberSection title="Dictador" count={1} badge="bg-amber-500/20 text-amber-400">
                 <MemberCard member={dictator} roleName={null} onClick={() => selectMember(dictator)} />
               </MemberSection>
             )}
 
-            {/* Custom role sections */}
+            {/* Role sections in hierarchy order */}
             {membersWithRoles.map(({ role, list }) => (
-              <MemberSection key={role.id} title={role.name} badge="bg-blue-500/20 text-blue-400">
+              <MemberSection key={role.id} title={role.name} count={list.length} badge="bg-blue-500/20 text-blue-400">
                 {list.map((m) => (
                   <MemberCard key={m.id} member={m} roleName={role.name} onClick={() => selectMember(m)} />
                 ))}
@@ -238,7 +238,7 @@ export default function MembersView({ onBack }: Props) {
 
             {/* Unassigned members */}
             {unassigned.length > 0 && (
-              <MemberSection title="Sin rol asignado" badge="bg-slate-700 text-slate-300">
+              <MemberSection title="Sin rol asignado" count={unassigned.length} badge="bg-slate-700 text-slate-300">
                 {unassigned.map((m) => (
                   <MemberCard key={m.id} member={m} roleName={null} onClick={() => selectMember(m)} />
                 ))}
@@ -251,16 +251,21 @@ export default function MembersView({ onBack }: Props) {
   );
 }
 
-function MemberSection({ title, badge, children }: { title: string; badge: string; children: React.ReactNode }) {
+function MemberSection({ title, count, badge, children }: { title: string; count: number; badge: string; children: React.ReactNode }) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-3">
         <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${badge}`}>{title}</span>
+        {count > 0 && <span className="text-xs text-slate-500">{count} miembro{count > 1 ? 's' : ''}</span>}
         <div className="flex-1 h-px bg-slate-800" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {children}
-      </div>
+      {count === 0 ? (
+        <p className="text-xs text-slate-600 italic">Sin miembros en este rol todavía.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

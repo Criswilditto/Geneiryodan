@@ -1,9 +1,10 @@
 import { useAuth } from '@/hooks/useAuth';
 import AuthScreen from '@/components/AuthScreen';
 import Dashboard from '@/components/Dashboard';
+import ChangePasswordScreen from '@/components/ChangePasswordScreen';
 
 function App() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
 
   if (loading) {
     return (
@@ -14,6 +15,9 @@ function App() {
   }
 
   if (!user) return <AuthScreen />;
+  if (profile?.must_change_password) {
+    return <ChangePasswordScreen onDone={refreshProfile} />;
+  }
   return <Dashboard />;
 }
 

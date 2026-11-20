@@ -10,6 +10,7 @@ type AuthState = {
   signIn: (username: string, password: string) => Promise<{ error: string | null }>;
   signUpDictator: (username: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -56,6 +57,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, [user]);
 
+  const refreshProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+    setProfile(data as Profile | null);
+  };
+
   const signIn = async (username: string, password: string) => {
     const email = usernameToEmail(username);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -87,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, signIn, signUpDictator, signOut }}>
+    <AuthContext.Provider value={{ user, profile, session, loading, signIn, signUpDictator, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
